@@ -11,7 +11,7 @@ namespace CentroidFinder
     public partial class Form1 : Form
     {
 		private string FilePath = string.Empty;
-		protected bool ValidData;
+		private bool ValidData;
 
 		public Form1()
         {
@@ -23,22 +23,31 @@ namespace CentroidFinder
         private Bitmap Score()
         {
 			Bitmap bmp = (Bitmap)pb.BackgroundImage.Clone();
+
+			// Generate intensity histograms from image
             HorizontalIntensityStatistics his = new HorizontalIntensityStatistics(bmp);
 			VerticalIntensityStatistics vis = new VerticalIntensityStatistics(bmp);
-			int[] hisArr = his.Red.ToArray();
+
+			// Convert red channel histograms to int array
+			int[] hisArr = his.Red.ToArray(); 
 			int[] visArr = vis.Red.ToArray();
+
+			// Empty int array the size of the image in pixels
 			int[,] checkCollision = new int[bmp.Width + 1, bmp.Height + 1];
+
 			using (Graphics  g = Graphics.FromImage(bmp))
             {
+				// Iterate along X-axis
                 for (int i = 0; i < bmp.Width; i++)
                 {
 					int j = bmp.Height / 2;
 					int k = ConvertRange(hisArr.Max(), hisArr.Min(), (int)(-j * 0.5), (int)(j * 0.5), hisArr[i]);
-					checkCollision[i, j + k] += 1;
-					checkCollision[Math.Abs(i - bmp.Width), j + k] += 1;
 					//g.DrawEllipse(Pens.Red, new Rectangle(i, j + k, 3, 3));
 					//g.DrawEllipse(Pens.Green, new Rectangle(Math.Abs(i-bmp.Width), j + k, 3, 3));
+					checkCollision[i, j + k] += 1;
+					checkCollision[Math.Abs(i - bmp.Width), j + k] += 1;
 				}
+				// Iterate along Y-axis
 				for (int j = 0; j < bmp.Height; j++)
 				{
 					int i = bmp.Width / 2;
@@ -53,14 +62,14 @@ namespace CentroidFinder
 				{
 					for (int j = 0; j < bmp.Height; j++)
 					{
-						if (checkCollision[i,j] >= 2)
+						if (checkCollision[i,j] >= 2) // Find "hot" pixel locations
                         {
 							collisions.Add(new PointF(i,j));
 							g.FillEllipse(Brushes.Red, new Rectangle(i - 3, j - 3, 6, 6));
 						}
 					}
 				}
-				PointF centroid = GetCentroid(collisions);
+				PointF centroid = GetCentroid(collisions); // Determine the centroid
 				g.FillEllipse(Brushes.Gold, new Rectangle((int)(centroid.X - 10), (int)(centroid.Y - 10), 20, 20));
 				g.FillEllipse(Brushes.Green, new Rectangle((int)(centroid.X - 2), (int)(centroid.Y - 2), 4, 4));
 				Text = centroid.ToString();
@@ -103,7 +112,9 @@ namespace CentroidFinder
 			return new PointF(centerX / accumulatedArea, centerY / accumulatedArea);
 		}
 
-		private void OnDragDrop(object sender, DragEventArgs e)
+        #region Drag and Drop Functions
+
+        private void OnDragDrop(object sender, DragEventArgs e)
 		{
 			if (ValidData)
             {
@@ -141,5 +152,7 @@ namespace CentroidFinder
             }
 			return ret;
 		}
-	}
+
+        #endregion
+    }
 }
